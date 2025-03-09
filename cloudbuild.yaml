@@ -1,23 +1,24 @@
 steps:
   # Step 1: Build Docker Image
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/my-docker-repo/my-app:$SHORT_SHA', '.']
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/${PROJECT_ID}/my-docker-repo/my-app:${SHORT_SHA}', '.']
 
   # Step 2: Push Image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/my-docker-repo/my-app:$SHORT_SHA']
+    args: ['push', 'us-central1-docker.pkg.dev/${PROJECT_ID}/my-docker-repo/my-app:${SHORT_SHA}']
 
   # Step 3: Deploy to GKE
   - name: 'gcr.io/cloud-builders/kubectl'
+    entrypoint: 'bash'
     args:
-      - 'set'
-      - 'image'
-      - 'deployment/my-app-deployment'
-      - 'my-app=us-central1-docker.pkg.dev/$PROJECT_ID/my-docker-repo/my-app:$SHORT_SHA'
+      - '-c'
+      - |
+        gcloud container clusters get-credentials my-gke-cluster --zone=us-central1-a --project=${PROJECT_ID} &&
+        kubectl set image deployment/my-app-deployment my-app=us-central1-docker.pkg.dev/${PROJECT_ID}/my-docker-repo/my-app:${SHORT_SHA}
     env:
       - 'CLOUDSDK_COMPUTE_ZONE=us-central1-a'
       - 'CLOUDSDK_CONTAINER_CLUSTER=my-gke-cluster'
 
 images:
-  - 'us-central1-docker.pkg.dev/$PROJECT_ID/my-docker-repo/my-app:$SHORT_SHA'
+  - 'us-central1-docker.pkg.dev/${PROJECT_ID}/my-docker-repo/my-app:${SHORT_SHA}'
 
